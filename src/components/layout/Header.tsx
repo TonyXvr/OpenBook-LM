@@ -1,62 +1,61 @@
 import React from 'react';
-import { 
-  Search, 
-  Settings, 
-  HelpCircle, 
-  User,
-  MessageSquare,
-  Share2,
-  Sparkles
-} from 'lucide-react';
 import { useNotes } from '../../context/NotesContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const Header: React.FC = () => {
-  const { activeNote, activeNotebook } = useNotes();
+  const { activeNote, updateNote } = useNotes();
+  const { theme, toggleTheme } = useTheme();
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (activeNote) {
+      updateNote({
+        ...activeNote,
+        title: e.target.value
+      });
+    }
+  };
 
   return (
-    <header className="h-16 px-6 flex items-center justify-between border-b border-gray-200 bg-white">
-      <div className="flex items-center">
-        {activeNotebook && (
-          <h1 className="text-lg font-medium text-gray-800">
-            {activeNotebook.title}
-            {activeNote && (
-              <span className="mx-2 text-gray-400">/</span>
-            )}
-            {activeNote && (
-              <span className="font-normal">{activeNote.title}</span>
-            )}
-          </h1>
+    <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 dark:bg-gray-800 dark:border-gray-700">
+      <div className="flex-1">
+        {activeNote ? (
+          <input
+            type="text"
+            value={activeNote.title}
+            onChange={handleTitleChange}
+            className="text-xl font-semibold border-none focus:ring-0 focus:outline-none w-full bg-transparent dark:text-white"
+            placeholder="Untitled Note"
+          />
+        ) : (
+          <h1 className="text-xl font-semibold dark:text-white">OpenbookLM</h1>
         )}
       </div>
-      
       <div className="flex items-center space-x-4">
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-          <Search className="h-5 w-5" />
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+          aria-label="Toggle theme"
+        >
+          {theme === 'light' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-300">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="m4.93 4.93 1.41 1.41"></path>
+              <path d="m17.66 17.66 1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="m6.34 17.66-1.41 1.41"></path>
+              <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+          )}
         </button>
-        
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-          <MessageSquare className="h-5 w-5" />
-        </button>
-        
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-          <Share2 className="h-5 w-5" />
-        </button>
-        
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-          <HelpCircle className="h-5 w-5" />
-        </button>
-        
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-          <Settings className="h-5 w-5" />
-        </button>
-        
-        <div className="flex items-center space-x-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-          <Sparkles className="h-4 w-4" />
-          <span className="text-sm font-medium">Powered by Gemini</span>
-        </div>
-        
-        <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-          <User className="h-5 w-5 text-gray-500" />
+        <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+          <span>U</span>
         </div>
       </div>
     </header>

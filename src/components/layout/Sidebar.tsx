@@ -1,351 +1,157 @@
 import React, { useState } from 'react';
-import { 
-  Book, 
-  Plus, 
-  Search, 
-  ChevronDown, 
-  ChevronRight, 
-  FileText, 
-  Trash2, 
-  Edit,
-  Sparkles,
-  Upload,
-  File
-} from 'lucide-react';
 import { useNotes } from '../../context/NotesContext';
-import { Note, Notebook, Document } from '../../types';
-import FileUploader from '../documents/FileUploader';
 
 const Sidebar: React.FC = () => {
   const { 
     notebooks, 
     notes, 
-    documents,
     activeNotebook, 
     activeNote, 
+    setActiveNote, 
     setActiveNotebook, 
-    setActiveNote,
+    createNote, 
     createNotebook,
-    createNote,
-    deleteNotebook,
-    deleteNote,
-    createNoteFromDocument
+    documents
   } = useNotes();
   
-  const [expandedNotebooks, setExpandedNotebooks] = useState<Record<string, boolean>>(
-    notebooks.reduce((acc, notebook) => ({ ...acc, [notebook.id]: true }), {})
-  );
-  
-  const [showDocuments, setShowDocuments] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isCreatingNotebook, setIsCreatingNotebook] = useState(false);
   const [newNotebookTitle, setNewNotebookTitle] = useState('');
-  const [showUploader, setShowUploader] = useState(false);
-
-  const toggleNotebook = (notebookId: string) => {
-    setExpandedNotebooks(prev => ({
-      ...prev,
-      [notebookId]: !prev[notebookId]
-    }));
-  };
-
-  const handleNotebookClick = (notebook: Notebook) => {
-    setActiveNotebook(notebook);
-    // If notebook has notes, select the first one
-    if (notebook.notes.length > 0) {
-      const firstNote = notes.find(note => note.id === notebook.notes[0]) || null;
-      setActiveNote(firstNote);
-    } else {
-      setActiveNote(null);
-    }
-  };
-
-  const handleNoteClick = (note: Note) => {
-    setActiveNote(note);
-  };
 
   const handleCreateNotebook = () => {
     if (newNotebookTitle.trim()) {
-      createNotebook(newNotebookTitle.trim());
+      createNotebook(newNotebookTitle);
       setNewNotebookTitle('');
       setIsCreatingNotebook(false);
     }
   };
 
-  const handleCreateNote = (notebookId: string) => {
-    createNote(notebookId);
-  };
-
-  const handleCreateNoteFromDocument = (document: Document) => {
-    if (!activeNotebook) {
-      alert('Please select a notebook first');
-      return;
+  const handleCreateNote = () => {
+    if (activeNotebook) {
+      createNote(activeNotebook.id);
+    } else if (notebooks.length > 0) {
+      createNote(notebooks[0].id);
     }
-    
-    try {
-      createNoteFromDocument(document, activeNotebook.id);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to create note from document');
-    }
-  };
-
-  const filteredNotebooks = notebooks.filter(notebook => 
-    notebook.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredDocuments = documents.filter(doc =>
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getNotesForNotebook = (notebookId: string) => {
-    return notes.filter(note => 
-      notebooks.find(nb => nb.id === notebookId)?.notes.includes(note.id)
-    ).filter(note => 
-      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
   };
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-800">OpenbookLM</h1>
-          </div>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search notes..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+    <div className="h-full flex flex-col bg-gray-100 dark:bg-gray-900">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white">OpenbookLM</h1>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-2">
-        {/* Documents Section */}
-        <div className="mb-4">
-          <div 
-            className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 rounded"
-            onClick={() => setShowDocuments(!showDocuments)}
-          >
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Documents</h2>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowUploader(true);
-                }}
-                className="p-1 hover:bg-gray-200 rounded-full"
-                title="Upload document"
-              >
-                <Upload className="h-4 w-4 text-gray-500" />
-              </button>
-              {showDocuments ? (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
-              )}
-            </div>
-          </div>
-          
-          {showUploader && (
-            <div className="p-3 bg-gray-50 rounded-lg mb-2">
-              <FileUploader onClose={() => setShowUploader(false)} />
-            </div>
-          )}
-          
-          {showDocuments && (
-            <div className="ml-2 space-y-1">
-              {filteredDocuments.length > 0 ? (
-                filteredDocuments.map(document => (
-                  <div 
-                    key={document.id}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100"
-                  >
-                    <div className="flex items-center space-x-2 flex-1">
-                      <File className={`h-4 w-4 ${document.type === 'pdf' ? 'text-red-500' : 'text-orange-500'}`} />
-                      <div className="flex flex-col">
-                        <span className="text-sm truncate">{document.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {document.processingStatus === 'completed' ? 'Processed' : 
-                           document.processingStatus === 'processing' ? 'Processing...' : 
-                           document.processingStatus === 'error' ? 'Error' : 'Pending'}
-                        </span>
-                      </div>
-                    </div>
-                    {document.processingStatus === 'completed' && (
-                      <button 
-                        onClick={() => handleCreateNoteFromDocument(document)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                        title="Create note from document"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="p-2 text-sm text-gray-500 italic">
-                  No documents found
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* Notebooks Section */}
-        <div className="flex items-center justify-between p-2">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Notebooks</h2>
-          <button 
-            onClick={() => setIsCreatingNotebook(true)}
-            className="p-1 hover:bg-gray-100 rounded-full"
-          >
-            <Plus className="h-4 w-4 text-gray-500" />
-          </button>
-        </div>
-        
-        {isCreatingNotebook && (
-          <div className="p-2 mb-2 bg-gray-50 rounded-lg">
-            <input
-              type="text"
-              placeholder="Notebook title"
-              className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={newNotebookTitle}
-              onChange={(e) => setNewNotebookTitle(e.target.value)}
-              autoFocus
-            />
-            <div className="flex justify-end space-x-2">
-              <button 
-                onClick={() => setIsCreatingNotebook(false)}
-                className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleCreateNotebook}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        )}
-        
-        <div className="space-y-1">
-          {filteredNotebooks.map(notebook => (
-            <div key={notebook.id} className="rounded-lg overflow-hidden">
-              <div 
-                className={`flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 ${
-                  activeNotebook?.id === notebook.id ? 'bg-blue-50 text-blue-700' : ''
-                }`}
-                onClick={() => handleNotebookClick(notebook)}
-              >
-                <div className="flex items-center space-x-2 flex-1">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleNotebook(notebook.id);
-                    }}
-                    className="p-1 rounded-full hover:bg-gray-200"
-                  >
-                    {expandedNotebooks[notebook.id] ? (
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
-                    )}
-                  </button>
-                  <Book className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium truncate">{notebook.title}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCreateNote(notebook.id);
-                    }}
-                    className="p-1 rounded-full hover:bg-gray-200"
-                    title="Add note"
-                  >
-                    <Plus className="h-3 w-3 text-gray-500" />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm('Are you sure you want to delete this notebook?')) {
-                        deleteNotebook(notebook.id);
-                      }
-                    }}
-                    className="p-1 rounded-full hover:bg-gray-200"
-                    title="Delete notebook"
-                  >
-                    <Trash2 className="h-3 w-3 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-              
-              {expandedNotebooks[notebook.id] && (
-                <div className="ml-6 space-y-1 mt-1">
-                  {getNotesForNotebook(notebook.id).map(note => (
-                    <div 
-                      key={note.id}
-                      className={`flex items-center justify-between p-2 cursor-pointer rounded-lg hover:bg-gray-100 ${
-                        activeNote?.id === note.id ? 'bg-blue-50 text-blue-700' : ''
-                      }`}
-                      onClick={() => handleNoteClick(note)}
-                    >
-                      <div className="flex items-center space-x-2 flex-1">
-                        <FileText className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm truncate">{note.title}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('Are you sure you want to delete this note?')) {
-                              deleteNote(note.id);
-                            }
-                          }}
-                          className="p-1 rounded-full hover:bg-gray-200"
-                          title="Delete note"
-                        >
-                          <Trash2 className="h-3 w-3 text-gray-500" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {getNotesForNotebook(notebook.id).length === 0 && (
-                    <div className="p-2 text-sm text-gray-500 italic">
-                      No notes in this notebook
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-          
-          {filteredNotebooks.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              No notebooks found
-            </div>
-          )}
-        </div>
-      </div>
-      
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 flex justify-between items-center">
+        <h2 className="font-medium text-gray-700 dark:text-gray-300">Notebooks</h2>
         <button 
-          className="w-full flex items-center justify-center space-x-2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          onClick={() => setShowUploader(true)}
+          onClick={() => setIsCreatingNotebook(true)}
+          className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          <Upload className="h-4 w-4" />
-          <span>Upload Document</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600 dark:text-gray-400">
+            <path d="M5 12h14"></path>
+            <path d="M12 5v14"></path>
+          </svg>
         </button>
       </div>
+      
+      {isCreatingNotebook && (
+        <div className="px-4 mb-2 flex">
+          <input
+            type="text"
+            value={newNotebookTitle}
+            onChange={(e) => setNewNotebookTitle(e.target.value)}
+            placeholder="Notebook name"
+            className="flex-1 p-2 text-sm border rounded-l dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            autoFocus
+          />
+          <button 
+            onClick={handleCreateNotebook}
+            className="bg-blue-500 text-white px-3 rounded-r"
+          >
+            Add
+          </button>
+        </div>
+      )}
+      
+      <div className="overflow-y-auto flex-1">
+        {notebooks.map(notebook => (
+          <div key={notebook.id} className="mb-2">
+            <div 
+              className={`px-4 py-2 flex items-center justify-between cursor-pointer ${
+                activeNotebook?.id === notebook.id ? 'bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-200 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveNotebook(notebook)}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-gray-600 dark:text-gray-400">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+                <span className="text-gray-800 dark:text-gray-200">{notebook.title}</span>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{notebook.notes.length}</span>
+            </div>
+            
+            {activeNotebook?.id === notebook.id && notebook.notes.length > 0 && (
+              <div className="ml-6 border-l border-gray-300 dark:border-gray-700">
+                {notebook.notes.map(noteId => {
+                  const note = notes.find(n => n.id === noteId);
+                  if (!note) return null;
+                  
+                  return (
+                    <div 
+                      key={note.id}
+                      className={`pl-4 pr-2 py-1 cursor-pointer ${
+                        activeNote?.id === note.id ? 'bg-blue-50 dark:bg-blue-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                      onClick={() => setActiveNote(note)}
+                    >
+                      <div className="text-sm truncate text-gray-700 dark:text-gray-300">{note.title}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <button 
+          onClick={handleCreateNote}
+          className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center justify-center"
+          disabled={notebooks.length === 0}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          New Note
+        </button>
+      </div>
+      
+      {documents.length > 0 && (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <h2 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Documents</h2>
+          <div className="max-h-40 overflow-y-auto">
+            {documents.map(doc => (
+              <div key={doc.id} className="flex items-center py-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-gray-600 dark:text-gray-400">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span className="text-sm truncate text-gray-700 dark:text-gray-300">{doc.name}</span>
+                {doc.processingStatus === 'pending' && (
+                  <span className="ml-2 text-xs text-yellow-500">Pending</span>
+                )}
+                {doc.processingStatus === 'processing' && (
+                  <span className="ml-2 text-xs text-blue-500">Processing</span>
+                )}
+                {doc.processingStatus === 'error' && (
+                  <span className="ml-2 text-xs text-red-500">Error</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
